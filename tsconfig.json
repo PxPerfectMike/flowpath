@@ -1,0 +1,19 @@
+// tsconfig.json
+{
+	"compilerOptions": {
+		"target": "es2020",
+		"module": "esnext",
+		"lib": ["es2020", "dom"],
+		"declaration": true,
+		"declarationDir": "dist/types",
+		"sourceMap": true,
+		"outDir": "dist/esm",
+		"strict": true,
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "dist", "test"]
+}
