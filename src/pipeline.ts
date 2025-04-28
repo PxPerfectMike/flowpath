@@ -64,12 +64,12 @@ export function pipeline<T, R>(
  */
 export function branch<T, R = T>(options: {
 	when: (input: T) => boolean;
-	then: PipelineFunction<T, R>;
+	action: PipelineFunction<T, R>;
 	else?: PipelineFunction<T, R>;
 }): PipelineFunction<T, R> {
 	return (input: T): R => {
 		if (options.when(input)) {
-			return options.then(input);
+			return options.action(input);
 		}
 		return options.else ? options.else(input) : (input as unknown as R);
 	};

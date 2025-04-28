@@ -1,5 +1,4 @@
 // test/function/memo.test.ts
-import { jest } from '@jest/globals';
 import { fn } from '../../src';
 
 describe('fn.memo', () => {
@@ -70,11 +69,10 @@ describe('fn.memo', () => {
 	});
 
 	it('should use custom keyGenerator', () => {
-		const expensiveFn = jest.fn(
-			(obj: { id: number; name: string }) => obj.id
-		);
+		type TestObject = { id: number; name: string };
+		const expensiveFn = jest.fn((obj: TestObject) => obj.id);
 		const memoized = fn.memo(expensiveFn, {
-			keyGenerator: (obj) => String(obj.id),
+			keyGenerator: (obj) => String((obj as TestObject).id),
 		});
 
 		// Different objects with same ID should hit cache
@@ -128,7 +126,7 @@ describe('fn.memo', () => {
 		expect(expensiveFn).toHaveBeenCalledTimes(2);
 
 		// Clear the cache
-		(memoized as any).clear();
+		(memoized as unknown as { clear: () => void }).clear();
 
 		// Should miss cache
 		memoized(1);
@@ -145,7 +143,9 @@ describe('fn.memo', () => {
 		expect(expensiveFn).toHaveBeenCalledTimes(2);
 
 		// Invalidate specific key
-		(memoized as any).invalidate(1);
+		(
+			memoized as unknown as { invalidate: (key: unknown) => void }
+		).invalidate(1);
 
 		// Should miss cache for invalidated key
 		memoized(1);

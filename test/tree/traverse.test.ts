@@ -23,7 +23,7 @@ describe('tree.traverse', () => {
 	};
 
 	it('should traverse a tree depth-first', () => {
-		const visited: string[] = [];
+		const visited = [] as string[];
 
 		tree.traverse(testTree, (node) => {
 			visited.push(node.id);
@@ -33,7 +33,7 @@ describe('tree.traverse', () => {
 	});
 
 	it('should traverse a tree breadth-first', () => {
-		const visited: string[] = [];
+		const visited = [] as string[];
 
 		tree.traverse(
 			testTree,
@@ -47,7 +47,7 @@ describe('tree.traverse', () => {
 	});
 
 	it('should respect max depth', () => {
-		const visited: string[] = [];
+		const visited = [] as string[];
 
 		tree.traverse(
 			testTree,
@@ -61,7 +61,7 @@ describe('tree.traverse', () => {
 	});
 
 	it('should apply filter', () => {
-		const visited: string[] = [];
+		const visited = [] as string[];
 
 		tree.traverse(
 			testTree,

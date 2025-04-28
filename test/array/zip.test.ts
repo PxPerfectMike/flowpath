@@ -2,7 +2,7 @@
 import { array } from '../../src';
 
 describe('array.zip', () => {
-	it('should zip multiple arrays together', (done) => {
+	it('should zip multiple arrays together', () => {
 		const array1 = [1, 2, 3];
 		const array2 = ['a', 'b', 'c'];
 		const array3 = [true, false, true];
@@ -16,7 +16,7 @@ describe('array.zip', () => {
 		]);
 	});
 
-	it('should handle arrays of different lengths by using the shortest length', (done) => {
+	it('should handle arrays of different lengths by using the shortest length', () => {
 		const array1 = [1, 2, 3, 4, 5];
 		const array2 = ['a', 'b', 'c'];
 		const array3 = [true, false, true, false];
@@ -30,29 +30,26 @@ describe('array.zip', () => {
 		]);
 	});
 
-	it('should handle empty arrays', (done) => {
+	it('should handle empty arrays', () => {
 		const array1 = [1, 2, 3];
-		const array2: string[] = [];
+		const array2 = [] as string[];
 
 		const result = array.zip(array1, array2);
 
 		expect(result).toEqual([]);
-		done();
 	});
 
-	it('should handle a single array by returning arrays of one element', (done) => {
+	it('should handle a single array by returning arrays of one element', () => {
 		const array1 = [1, 2, 3];
 
 		const result = array.zip(array1);
 
 		expect(result).toEqual([[1], [2], [3]]);
-		done();
 	});
 
-	it('should handle no arrays by returning an empty array', (done) => {
+	it('should handle no arrays by returning an empty array', () => {
 		const result = array.zip();
 
 		expect(result).toEqual([]);
-		done();
 	});
 });

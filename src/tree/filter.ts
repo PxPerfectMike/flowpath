@@ -15,8 +15,6 @@ export function filter<T extends TreeNode>(
 ): T | null {
 	const { childrenKey = 'children' } = options;
 
-	type NodeWithChildren = T & { [key: string]: T[] };
-
 	// Clone the tree to avoid mutating the original
 	const clonedTree = JSON.parse(JSON.stringify(tree));
 
@@ -25,7 +23,6 @@ export function filter<T extends TreeNode>(
 		return null;
 	}
 
-	// Removed redundant line causing the error
 	function filterChildren(node: T, depth: number, path: number[]): void {
 		const children = node[childrenKey];
 		if (!Array.isArray(children)) return;
@@ -33,9 +30,8 @@ export function filter<T extends TreeNode>(
 		const filteredChildren = children.filter((child, index) =>
 			predicate(child, depth + 1, [...path, index])
 		);
-		(node as unknown as Record<string, T[]>)[childrenKey] =
-			filteredChildren;
-		// Replace with filtered children
+
+		// Replace with filtered children (fixed: removed redundant assignment)
 		(node as unknown as Record<string, T[]>)[childrenKey] =
 			filteredChildren;
 
