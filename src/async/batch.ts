@@ -1,5 +1,12 @@
 // src/async/batch.ts
 import { chunk } from '../array/chunk';
+import {
+	handleError,
+	requireCondition,
+	requireDefined,
+	requireRange,
+	TimeoutError,
+} from '../errors';
 
 export interface BatchOptions<T, R> {
 	/**
@@ -52,11 +59,29 @@ export interface BatchOptions<T, R> {
  * Processes items in batches with controlled concurrency and advanced options
  * @param items Items to process
  * @param options Batch processing options
+ * @throws {InvalidArgumentError} If options are invalid
  */
 export async function batch<T, R>(
 	items: T[],
 	options: BatchOptions<T, R>
 ): Promise<R[]> {
+	// Validate inputs
+	requireDefined(items, 'items');
+	requireCondition(
+		items,
+		Array.isArray,
+		'Parameter items must be an array',
+		'items'
+	);
+	requireDefined(options, 'options');
+	requireDefined(options.process, 'options.process');
+	requireCondition(
+		options.process,
+		(fn) => typeof fn === 'function',
+		'Parameter options.process must be a function',
+		'options.process'
+	);
+
 	const {
 		process,
 		concurrency = Number.POSITIVE_INFINITY,
@@ -66,6 +91,21 @@ export async function batch<T, R>(
 		timeout,
 		onProgress,
 	} = options;
+
+	// Validate numeric options
+	if (concurrency !== Number.POSITIVE_INFINITY) {
+		requireRange(
+			concurrency,
+			1,
+			Number.POSITIVE_INFINITY,
+			'options.concurrency'
+		);
+	}
+	requireRange(retries, 0, Number.POSITIVE_INFINITY, 'options.retries');
+	requireRange(retryDelay, 0, Number.POSITIVE_INFINITY, 'options.retryDelay');
+	if (timeout !== undefined) {
+		requireRange(timeout, 0, Number.POSITIVE_INFINITY, 'options.timeout');
+	}
 
 	const results: R[] = new Array(items.length);
 	const effectiveConcurrency = Math.min(items.length, concurrency);
@@ -87,7 +127,7 @@ export async function batch<T, R>(
 
 	for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
 		const batch = batches[batchIndex];
-		const batchResults = await Promise.all(
+		await Promise.all(
 			batch.map(async (item, index) => {
 				const originalIndex = batchIndex * effectiveConcurrency + index;
 				try {
@@ -96,27 +136,45 @@ export async function batch<T, R>(
 
 					completedCount++;
 					if (onProgress) {
-						onProgress({
-							completed: completedCount,
-							total: items.length,
-							result,
-						});
+						try {
+							onProgress({
+								completed: completedCount,
+								total: items.length,
+								result,
+							});
+						} catch (callbackError) {
+							// Ignore errors in progress callback
+							console.error(
+								'Error in progress callback:',
+								callbackError
+							);
+						}
 					}
-
-					return result;
 				} catch (error) {
 					completedCount++;
+					const handledError = handleError(
+						error,
+						'Item processing failed'
+					);
+
 					if (onProgress) {
-						onProgress({
-							completed: completedCount,
-							total: items.length,
-							error:
-								error instanceof Error
-									? error
-									: new Error(String(error)),
-						});
+						try {
+							onProgress({
+								completed: completedCount,
+								total: items.length,
+								error: handledError,
+							});
+						} catch (callbackError) {
+							// Ignore errors in progress callback
+							console.error(
+								'Error in progress callback:',
+								callbackError
+							);
+						}
 					}
-					throw error;
+
+					// Re-throw the error to propagate it
+					throw handledError;
 				}
 			})
 		);
@@ -139,8 +197,9 @@ export async function batch<T, R>(
 							setTimeout(
 								() =>
 									reject(
-										new Error(
-											`Timeout of ${timeout}ms exceeded`
+										new TimeoutError(
+											`Timeout of ${timeout}ms exceeded`,
+											timeout
 										)
 									),
 								timeout
@@ -151,8 +210,7 @@ export async function batch<T, R>(
 
 				return await executor;
 			} catch (error) {
-				lastError =
-					error instanceof Error ? error : new Error(String(error));
+				lastError = handleError(error, 'Item processing failed');
 
 				if (attempt < retries) {
 					const delay = exponentialBackoff

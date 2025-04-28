@@ -1,10 +1,13 @@
 // src/string/padStart.ts
+import { requireRange, requireDefined } from '../errors';
+import { padStart as compatPadStart } from '../utils/browserCompat';
 
 /**
  * Pads the start of a string with a given string until it reaches the desired length
  * @param str String to pad
  * @param targetLength Target length of the resulting string
  * @param padString String to pad with
+ * @throws {InvalidArgumentError} If parameters are invalid
  * @example
  * ```ts
  * padStart('42', 5); // '   42'
@@ -17,25 +20,19 @@ export function padStart(
 	targetLength: number,
 	padString = ' '
 ): string {
-	// Use native String.padStart if available
-	if (typeof String.prototype.padStart === 'function') {
-		return String(str).padStart(targetLength, padString);
+	// Validate inputs
+	requireDefined(str, 'str');
+	if (typeof str !== 'string') {
+		throw new Error(`Parameter 'str' must be of type string`);
 	}
 
-	// Fallback implementation
-	const inputStr = String(str);
+	requireRange(targetLength, 0, Number.MAX_SAFE_INTEGER, 'targetLength');
 
-	if (inputStr.length >= targetLength) {
-		return inputStr;
+	requireDefined(padString, 'padString');
+	if (typeof padString !== 'string') {
+		throw new Error(`Parameter 'padString' must be of type string`);
 	}
 
-	const padLength = targetLength - inputStr.length;
-	let padding = padString;
-
-	// If we need to repeat the padding
-	while (padding.length < padLength) {
-		padding += padding;
-	}
-
-	return padding.slice(0, padLength) + inputStr;
+	// Use browser-compatible implementation
+	return compatPadStart(str, targetLength, padString);
 }

@@ -1,4 +1,6 @@
 // src/async/retry.ts
+import { handleError, requireRange, RetryError } from '../errors';
+
 export interface RetryOptions {
 	/**
 	 * Number of retry attempts
@@ -34,6 +36,8 @@ export interface RetryOptions {
  * Retry a function with exponential backoff
  * @param fn Function to retry
  * @param options Retry options
+ * @throws {InvalidArgumentError} If retry options are invalid
+ * @throws {RetryError} If all retry attempts failed
  */
 export async function retry<T>(
 	fn: (attempt: number) => Promise<T> | T,
@@ -47,18 +51,29 @@ export async function retry<T>(
 		onRetry,
 	} = options;
 
+	// Validate options
+	requireRange(attempts, 0, Number.POSITIVE_INFINITY, 'attempts');
+	requireRange(delay, 0, Number.POSITIVE_INFINITY, 'delay');
+
 	let lastError: Error | undefined;
 
 	for (let attempt = 0; attempt <= attempts; attempt++) {
 		try {
 			return await fn(attempt);
 		} catch (error) {
-			lastError =
-				error instanceof Error ? error : new Error(String(error));
+			lastError = handleError(error, 'Retry operation failed');
 
 			if (attempt < attempts && retryIf(lastError)) {
 				if (onRetry) {
-					onRetry(lastError, attempt);
+					try {
+						onRetry(lastError, attempt);
+					} catch (callbackError) {
+						// Ignore errors in the onRetry callback
+						console.error(
+							'Error in retry callback:',
+							callbackError
+						);
+					}
 				}
 
 				const waitTime = exponential ? delay * 2 ** attempt : delay;
@@ -69,5 +84,5 @@ export async function retry<T>(
 		}
 	}
 
-	throw lastError || new Error('All retry attempts failed');
+	throw new RetryError('All retry attempts failed', attempts, lastError);
 }

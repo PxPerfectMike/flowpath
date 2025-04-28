@@ -1,10 +1,13 @@
 // src/string/padEnd.ts
+import { requireRange, requireDefined } from '../errors';
+import { padEnd as compatPadEnd } from '../utils/browserCompat';
 
 /**
  * Pads the end of a string with a given string until it reaches the desired length
  * @param str String to pad
  * @param targetLength Target length of the resulting string
  * @param padString String to pad with
+ * @throws {InvalidArgumentError} If parameters are invalid
  * @example
  * ```ts
  * padEnd('42', 5); // '42   '
@@ -17,25 +20,19 @@ export function padEnd(
 	targetLength: number,
 	padString = ' '
 ): string {
-	// Use native String.padEnd if available
-	if (typeof String.prototype.padEnd === 'function') {
-		return String(str).padEnd(targetLength, padString);
+	// Validate inputs
+	requireDefined(str, 'str');
+	if (typeof str !== 'string') {
+		throw new Error(`Parameter 'str' must be of type string`);
 	}
 
-	// Fallback implementation
-	const inputStr = String(str);
+	requireRange(targetLength, 0, Number.MAX_SAFE_INTEGER, 'targetLength');
 
-	if (inputStr.length >= targetLength) {
-		return inputStr;
+	requireDefined(padString, 'padString');
+	if (typeof padString !== 'string') {
+		throw new Error(`Parameter 'padString' must be of type string`);
 	}
 
-	const padLength = targetLength - inputStr.length;
-	let padding = padString;
-
-	// If we need to repeat the padding
-	while (padding.length < padLength) {
-		padding += padding;
-	}
-
-	return inputStr + padding.slice(0, padLength);
+	// Use browser-compatible implementation
+	return compatPadEnd(str, targetLength, padString);
 }

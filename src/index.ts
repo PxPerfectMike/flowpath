@@ -5,10 +5,11 @@ import * as fn from './function';
 import * as obj from './object';
 import * as str from './string';
 import * as tree from './tree';
+import * as errors from './errors';
 import { pipeline } from './pipeline';
 import { from } from './from';
 
-export { array, async, fn, obj, str, tree, pipeline, from };
+export { array, async, fn, obj, str, tree, errors, pipeline, from };
 
 // For convenient namespace access
 export default {
@@ -18,6 +19,7 @@ export default {
 	obj,
 	str,
 	tree,
+	errors,
 	pipeline,
 	from,
 };
