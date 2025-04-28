@@ -35,10 +35,7 @@ export interface MemoOptions<T extends (...args: unknown[]) => unknown> {
 export function memo<T extends (...args: unknown[]) => unknown>(
 	fn: T,
 	options: MemoOptions<T> = {}
-): T & {
-	clear: () => void;
-	invalidate: (...args: Parameters<T>) => void;
-} {
+): unknown {
 	const {
 		maxSize = Number.POSITIVE_INFINITY,
 		ttl = Number.POSITIVE_INFINITY,
@@ -128,7 +125,7 @@ export function memo<T extends (...args: unknown[]) => unknown>(
 		return result as ReturnType<T>;
 	}
 
-	// Create the enhanced function type
+	// Create the enhanced function type with utility methods
 	const memoizedWithMethods = memoized as unknown as T & {
 		clear: () => void;
 		invalidate: (...args: Parameters<T>) => void;

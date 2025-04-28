@@ -25,8 +25,9 @@ describe('tree.traverse', () => {
 	it('should traverse a tree depth-first', () => {
 		const visited = [] as string[];
 
-		tree.traverse(testTree, (node) => {
+		tree.traverse(testTree, (node, depth, path) => {
 			visited.push(node.id);
+			return true; // Return value to satisfy the function signature
 		});
 
 		expect(visited).toEqual(['root', 'a', 'a1', 'a2', 'b', 'b1']);
@@ -37,8 +38,9 @@ describe('tree.traverse', () => {
 
 		tree.traverse(
 			testTree,
-			(node) => {
+			(node, depth, path) => {
 				visited.push(node.id);
+				return true; // Return value to satisfy the function signature
 			},
 			{ strategy: 'breadthFirst' }
 		);
@@ -51,8 +53,9 @@ describe('tree.traverse', () => {
 
 		tree.traverse(
 			testTree,
-			(node) => {
+			(node, depth, path) => {
 				visited.push(node.id);
+				return true; // Return value to satisfy the function signature
 			},
 			{ maxDepth: 1 }
 		);
@@ -65,8 +68,9 @@ describe('tree.traverse', () => {
 
 		tree.traverse(
 			testTree,
-			(node) => {
+			(node, depth, path) => {
 				visited.push(node.id);
+				return true; // Return value to satisfy the function signature
 			},
 			{
 				filter: (node) => node.id.startsWith('a'),

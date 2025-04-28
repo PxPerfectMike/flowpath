@@ -14,7 +14,9 @@ describe('obj.pick', () => {
 			},
 		};
 
-		const result = obj.pick(source, ['id', 'name', 'email']);
+		const result = obj.pick(source, ['id', 'name', 'email'] as Array<
+			keyof typeof source
+		>);
 
 		expect(result).toEqual({
 			id: 1,
@@ -24,9 +26,11 @@ describe('obj.pick', () => {
 	});
 
 	it('should ignore properties that do not exist', () => {
-		const source = { id: 1, name: 'Alice' };
+		const source = { id: 1, name: 'Alice' } as const;
 
-		const result = obj.pick(source, ['id', 'age']);
+		// For non-existent properties, we need to use type assertion
+		// to allow 'age' to be used even though it's not in the object
+		const result = obj.pick(source, ['id', 'age' as keyof typeof source]);
 
 		expect(result).toEqual({ id: 1 });
 	});
@@ -34,15 +38,17 @@ describe('obj.pick', () => {
 	it('should return an empty object when no properties are specified', () => {
 		const source = { id: 1, name: 'Alice' };
 
-		const result = obj.pick(source, []);
+		const result = obj.pick(source, [] as Array<keyof typeof source>);
 
 		expect(result).toEqual({});
 	});
 
 	it('should return an empty object when the source is an empty object', () => {
-		const source = {};
+		const source = {} as Record<string, unknown>;
 
-		const result = obj.pick(source, ['id', 'name']);
+		const result = obj.pick(source, ['id', 'name'] as Array<
+			keyof typeof source
+		>);
 
 		expect(result).toEqual({});
 	});
@@ -58,7 +64,9 @@ describe('obj.pick', () => {
 			},
 		};
 
-		const result = obj.pick(source, ['id', 'user']);
+		const result = obj.pick(source, ['id', 'user'] as Array<
+			keyof typeof source
+		>);
 
 		expect(result).toEqual({
 			id: 1,
@@ -75,7 +83,7 @@ describe('obj.pick', () => {
 		const nestedObj = { value: 42 };
 		const source = { id: 1, data: nestedObj };
 
-		const result = obj.pick(source, ['data']);
+		const result = obj.pick(source, ['data'] as Array<keyof typeof source>);
 
 		expect(result.data).toBe(nestedObj);
 	});

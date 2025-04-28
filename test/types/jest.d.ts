@@ -1,14 +1,13 @@
 // test/types/jest.d.ts
-import { MockInstance } from 'jest-mock';
+import type { MockInstance } from 'jest-mock';
 
 /**
  * Type definitions to enhance Jest compatibility with TypeScript
  */
 declare namespace jest {
 	// Extend the Jest mocking functions
-	interface Mock<T = any, Y extends any[] = any[]>
-		extends Function,
-			MockInstance<T, Y> {
+	interface Mock<T = unknown, Y extends unknown[] = unknown[]>
+		extends MockInstance<T, Y> {
 		mockClear(): this;
 		mockReset(): this;
 		mockRestore(): void;
@@ -20,14 +19,14 @@ declare namespace jest {
 		mockReturnValueOnce(value: T): this;
 		mockResolvedValue(value: T extends Promise<infer U> ? U : T): this;
 		mockResolvedValueOnce(value: T extends Promise<infer U> ? U : T): this;
-		mockRejectedValue(value: any): this;
-		mockRejectedValueOnce(value: any): this;
+		mockRejectedValue(value: unknown): this;
+		mockRejectedValueOnce(value: unknown): this;
 	}
 
 	// Properly type the jest.fn() function
 	interface JestMockFn {
-		<T = any, Y extends any[] = any[]>(): Mock<T, Y>;
-		<T = any, Y extends any[] = any[]>(
+		<T = unknown, Y extends unknown[] = unknown[]>(): Mock<T, Y>;
+		<T = unknown, Y extends unknown[] = unknown[]>(
 			implementation?: (...args: Y) => T
 		): Mock<T, Y>;
 	}
@@ -39,5 +38,3 @@ declare global {
 		const fn: jest.JestMockFn;
 	}
 }
-
-export {};

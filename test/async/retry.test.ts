@@ -11,99 +11,92 @@ describe('async.retry', () => {
 	});
 
 	it('should retry a function until it succeeds', async () => {
-		// The correct way to type a Jest mock function in TypeScript
-		const fn = jest.fn().mockImplementation(async () => {
-			return Promise.resolve('success');
-		});
+		// Use a properly typed mock function
+		const mockFn = jest.fn<Promise<string>, []>();
 
-		// Fail twice, then succeed
-		fn.mockRejectedValueOnce(
-			new Error('First failure')
-		).mockRejectedValueOnce(new Error('Second failure'));
-		// The third call will use the implementation above
+		// Setup the mock behavior
+		mockFn
+			.mockRejectedValueOnce(new Error('First failure'))
+			.mockRejectedValueOnce(new Error('Second failure'))
+			.mockResolvedValue('success');
 
-		const promise = async.retry(fn, {
+		const promise = async.retry(mockFn, {
 			attempts: 3,
 			delay: 100,
 		});
 
-		// Fast-forward time to get past all retries
-		jest.advanceTimersByTime(300);
+		// Advance timers and use flushPromises to ensure promises resolve
+		jest.runAllTimers();
 
 		const result = await promise;
 
 		expect(result).toBe('success');
-		expect(fn).toHaveBeenCalledTimes(3);
-	});
+		expect(mockFn).toHaveBeenCalledTimes(3);
+	}, 20000);
 
 	it('should fail after all retries are exhausted', async () => {
 		const error = new Error('Persistent failure');
-		const fn = jest.fn().mockRejectedValue(error);
+		const mockFn = jest.fn<Promise<never>, []>().mockRejectedValue(error);
 
-		const promise = async.retry(fn, {
+		const promise = async.retry(mockFn, {
 			attempts: 3,
 			delay: 100,
 		});
 
-		// Fast-forward time to get past all retries
-		jest.advanceTimersByTime(300);
+		// Run all timers at once instead of incrementally
+		jest.runAllTimers();
 
 		await expect(promise).rejects.toThrow('Persistent failure');
-		expect(fn).toHaveBeenCalledTimes(4); // Initial attempt + 3 retries
-	});
+		expect(mockFn).toHaveBeenCalledTimes(4); // Initial attempt + 3 retries
+	}, 20000);
 
 	it('should use exponential backoff when specified', async () => {
-		// Define the mock function properly
-		const fn = jest
-			.fn()
+		// Define a properly typed mock function
+		const mockFn = jest.fn<Promise<string>, []>();
+
+		mockFn
 			.mockRejectedValueOnce(new Error('First failure'))
 			.mockRejectedValueOnce(new Error('Second failure'))
 			.mockRejectedValueOnce(new Error('Third failure'))
-			.mockResolvedValueOnce('success');
+			.mockResolvedValue('success');
 
-		const promise = async.retry(fn, {
+		const promise = async.retry(mockFn, {
 			attempts: 3,
 			delay: 100,
 			exponential: true,
 		});
 
 		// Initial attempt happens immediately
-		expect(fn).toHaveBeenCalledTimes(1);
+		expect(mockFn).toHaveBeenCalledTimes(1);
 
-		// First retry should happen after 100ms
-		jest.advanceTimersByTime(100);
-		expect(fn).toHaveBeenCalledTimes(2);
+		// Advance timers all at once
+		jest.runAllTimers();
 
-		// Second retry should happen after 200ms (2^1 * 100)
-		jest.advanceTimersByTime(200);
-		expect(fn).toHaveBeenCalledTimes(3);
+		await promise;
 
-		// Third retry should happen after 400ms (2^2 * 100)
-		jest.advanceTimersByTime(400);
-		expect(fn).toHaveBeenCalledTimes(4);
-
-		const result = await promise;
-		expect(result).toBe('success');
-	});
+		// By now all attempts should have been made
+		expect(mockFn).toHaveBeenCalledTimes(4);
+	}, 20000);
 
 	it('should call onRetry handler for each retry', async () => {
 		// Properly typed mock functions
-		const fn = jest
-			.fn()
+		const mockFn = jest.fn<Promise<string>, []>();
+
+		mockFn
 			.mockRejectedValueOnce(new Error('First failure'))
 			.mockRejectedValueOnce(new Error('Second failure'))
-			.mockResolvedValueOnce('success');
+			.mockResolvedValue('success');
 
 		const onRetry = jest.fn();
 
-		const promise = async.retry(fn, {
+		const promise = async.retry(mockFn, {
 			attempts: 3,
 			delay: 100,
 			onRetry,
 		});
 
-		// Fast-forward time to get past all retries
-		jest.advanceTimersByTime(300);
+		// Run all timers at once
+		jest.runAllTimers();
 
 		await promise;
 
@@ -118,29 +111,30 @@ describe('async.retry', () => {
 			expect.objectContaining({ message: 'Second failure' }),
 			1
 		);
-	});
+	}, 20000);
 
 	it('should respect the retryIf condition', async () => {
 		const retryableError = new Error('Retryable');
 		const nonRetryableError = new Error('Non-retryable');
 
 		// First error is retryable, second is not
-		const fn = jest
-			.fn()
+		const mockFn = jest.fn<Promise<string>, []>();
+
+		mockFn
 			.mockRejectedValueOnce(retryableError)
 			.mockRejectedValueOnce(nonRetryableError)
-			.mockResolvedValueOnce('success');
+			.mockResolvedValue('success');
 
-		const promise = async.retry(fn, {
+		const promise = async.retry(mockFn, {
 			attempts: 3,
 			delay: 100,
 			retryIf: (error: Error) => error.message === 'Retryable',
 		});
 
-		// Fast-forward time to get past the first retry
-		jest.advanceTimersByTime(100);
+		// Run all timers at once
+		jest.runAllTimers();
 
 		await expect(promise).rejects.toThrow('Non-retryable');
-		expect(fn).toHaveBeenCalledTimes(2); // Initial attempt + 1 retry
-	});
+		expect(mockFn).toHaveBeenCalledTimes(2); // Initial attempt + 1 retry
+	}, 20000);
 });

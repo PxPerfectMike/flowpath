@@ -6,7 +6,7 @@
 export function curry<T extends (...args: unknown[]) => unknown>(
 	fn: T,
 	arity = fn.length
-): (...args: Parameters<T>) => ReturnType<T> {
+): unknown {
 	return function curriedFn(...args: unknown[]): unknown {
 		if (args.length >= arity) {
 			return fn(...args.slice(0, arity));
@@ -14,5 +14,5 @@ export function curry<T extends (...args: unknown[]) => unknown>(
 
 		return (...moreArgs: unknown[]): unknown =>
 			curriedFn(...args.concat(moreArgs));
-	} as (...args: Parameters<T>) => ReturnType<T>;
+	};
 }

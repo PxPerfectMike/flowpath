@@ -11,8 +11,13 @@ describe('fn.memo', () => {
 	});
 
 	it('should cache results based on arguments', () => {
-		const expensiveFn = jest.fn((a: number, b: number) => a + b);
-		const memoized = fn.memo(expensiveFn);
+		const expensiveFn = jest.fn(
+			(a: number, b: number) => a + b
+		) as unknown as (...args: unknown[]) => unknown;
+		const memoized = fn.memo(expensiveFn) as (
+			a: number,
+			b: number
+		) => number;
 
 		// First call should execute the function
 		expect(memoized(1, 2)).toBe(3);
@@ -28,8 +33,12 @@ describe('fn.memo', () => {
 	});
 
 	it('should respect maxSize option', () => {
-		const expensiveFn = jest.fn((x: number) => x * 2);
-		const memoized = fn.memo(expensiveFn, { maxSize: 2 });
+		const expensiveFn = jest.fn((x: number) => x * 2) as unknown as (
+			...args: unknown[]
+		) => unknown;
+		const memoized = fn.memo(expensiveFn, { maxSize: 2 }) as (
+			x: number
+		) => number;
 
 		memoized(1); // Cache: { 1 }
 		memoized(2); // Cache: { 1, 2 }
@@ -51,8 +60,12 @@ describe('fn.memo', () => {
 	});
 
 	it('should respect ttl option', () => {
-		const expensiveFn = jest.fn((x: number) => x * 2);
-		const memoized = fn.memo(expensiveFn, { ttl: 1000 });
+		const expensiveFn = jest.fn((x: number) => x * 2) as unknown as (
+			...args: unknown[]
+		) => unknown;
+		const memoized = fn.memo(expensiveFn, { ttl: 1000 }) as (
+			x: number
+		) => number;
 
 		memoized(1);
 		expect(expensiveFn).toHaveBeenCalledTimes(1);
@@ -70,10 +83,12 @@ describe('fn.memo', () => {
 
 	it('should use custom keyGenerator', () => {
 		type TestObject = { id: number; name: string };
-		const expensiveFn = jest.fn((obj: TestObject) => obj.id);
+		const expensiveFn = jest.fn((obj: TestObject) => obj.id) as unknown as (
+			...args: unknown[]
+		) => unknown;
 		const memoized = fn.memo(expensiveFn, {
 			keyGenerator: (obj) => String((obj as TestObject).id),
-		});
+		}) as (obj: TestObject) => number;
 
 		// Different objects with same ID should hit cache
 		memoized({ id: 1, name: 'Alice' });
@@ -91,11 +106,11 @@ describe('fn.memo', () => {
 			(constantArg: number, changingArg: { value: number }) => {
 				return constantArg + changingArg.value;
 			}
-		);
+		) as unknown as (...args: unknown[]) => unknown;
 
 		const memoized = fn.memo(expensiveFn, {
 			invalidateOn: [1], // Invalidate cache when second argument changes
-		});
+		}) as (constantArg: number, changingArg: { value: number }) => number;
 
 		const obj1 = { value: 10 };
 		const obj2 = { value: 20 };
@@ -118,15 +133,19 @@ describe('fn.memo', () => {
 	});
 
 	it('should provide a way to manually clear the cache', () => {
-		const expensiveFn = jest.fn((x: number) => x * 2);
-		const memoized = fn.memo(expensiveFn);
+		const expensiveFn = jest.fn((x: number) => x * 2) as unknown as (
+			...args: unknown[]
+		) => unknown;
+		const memoized = fn.memo(expensiveFn) as ((x: number) => number) & {
+			clear: () => void;
+		};
 
 		memoized(1);
 		memoized(2);
 		expect(expensiveFn).toHaveBeenCalledTimes(2);
 
 		// Clear the cache
-		(memoized as unknown as { clear: () => void }).clear();
+		memoized.clear();
 
 		// Should miss cache
 		memoized(1);
@@ -135,17 +154,19 @@ describe('fn.memo', () => {
 	});
 
 	it('should provide a way to invalidate specific keys', () => {
-		const expensiveFn = jest.fn((x: number) => x * 2);
-		const memoized = fn.memo(expensiveFn);
+		const expensiveFn = jest.fn((x: number) => x * 2) as unknown as (
+			...args: unknown[]
+		) => unknown;
+		const memoized = fn.memo(expensiveFn) as ((x: number) => number) & {
+			invalidate: (x: number) => void;
+		};
 
 		memoized(1);
 		memoized(2);
 		expect(expensiveFn).toHaveBeenCalledTimes(2);
 
 		// Invalidate specific key
-		(
-			memoized as unknown as { invalidate: (key: unknown) => void }
-		).invalidate(1);
+		memoized.invalidate(1);
 
 		// Should miss cache for invalidated key
 		memoized(1);
