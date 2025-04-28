@@ -55,20 +55,22 @@ export async function retry<T>(
 	requireRange(attempts, 0, Number.POSITIVE_INFINITY, 'attempts');
 	requireRange(delay, 0, Number.POSITIVE_INFINITY, 'delay');
 
-	let lastError: Error | undefined;
-
-	for (let attempt = 0; attempt <= attempts; attempt++) {
+	// This is the simplest implementation - a recursive function that keeps track
+	// of the current attempt
+	async function attemptWithRetry(currentAttempt: number): Promise<T> {
 		try {
-			return await fn(attempt);
+			return await Promise.resolve(fn(currentAttempt));
 		} catch (error) {
-			lastError = handleError(error, 'Retry operation failed');
+			const handledError = handleError(error, 'Retry operation failed');
 
-			if (attempt < attempts && retryIf(lastError)) {
+			// Check if we should retry
+			if (currentAttempt < attempts && retryIf(handledError)) {
+				// Call onRetry if provided
 				if (onRetry) {
 					try {
-						onRetry(lastError, attempt);
+						onRetry(handledError, currentAttempt);
 					} catch (callbackError) {
-						// Ignore errors in the onRetry callback
+						// Ignore errors in onRetry callback
 						console.error(
 							'Error in retry callback:',
 							callbackError
@@ -76,13 +78,31 @@ export async function retry<T>(
 					}
 				}
 
-				const waitTime = exponential ? delay * 2 ** attempt : delay;
+				// Calculate delay
+				const waitTime = exponential
+					? delay * 2 ** currentAttempt
+					: delay;
+
+				// Wait before retrying
 				await new Promise((resolve) => setTimeout(resolve, waitTime));
-			} else {
-				break;
+
+				// Try again with an incremented attempt counter
+				return attemptWithRetry(currentAttempt + 1);
 			}
+
+			// No more retries, throw the error
+			if (currentAttempt === attempts) {
+				throw new RetryError(
+					'All retry attempts failed',
+					attempts,
+					handledError
+				);
+			}
+
+			throw handledError;
 		}
 	}
 
-	throw new RetryError('All retry attempts failed', attempts, lastError);
+	// Start with attempt 0
+	return attemptWithRetry(0);
 }
