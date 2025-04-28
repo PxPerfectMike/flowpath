@@ -1,5 +1,5 @@
 // src/string/padEnd.ts
-import { requireRange, requireDefined } from '../errors';
+import { requireRange, requireType } from '../errors';
 import { padEnd as compatPadEnd } from '../utils/browserCompat';
 
 /**
@@ -20,18 +20,10 @@ export function padEnd(
 	targetLength: number,
 	padString = ' '
 ): string {
-	// Validate inputs
-	requireDefined(str, 'str');
-	if (typeof str !== 'string') {
-		throw new Error(`Parameter 'str' must be of type string`);
-	}
-
+	// Validate inputs consistently using the error utility functions
+	requireType(str, 'string', 'str');
 	requireRange(targetLength, 0, Number.MAX_SAFE_INTEGER, 'targetLength');
-
-	requireDefined(padString, 'padString');
-	if (typeof padString !== 'string') {
-		throw new Error(`Parameter 'padString' must be of type string`);
-	}
+	requireType(padString, 'string', 'padString');
 
 	// Use browser-compatible implementation
 	return compatPadEnd(str, targetLength, padString);

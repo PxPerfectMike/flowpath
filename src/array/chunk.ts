@@ -1,5 +1,5 @@
 // src/array/chunk.ts
-import { requireRange, requireType, requireDefined } from '../errors';
+import { requireRange, requireCondition } from '../errors';
 
 /**
  * Splits an array into chunks of the specified size
@@ -8,8 +8,7 @@ import { requireRange, requireType, requireDefined } from '../errors';
  * @throws {InvalidArgumentError} If size is less than 1 or array is not an array
  */
 export function chunk<T>(array: T[], size: number): T[][] {
-	// Validate inputs
-	requireDefined(array, 'array');
+	// Validate inputs consistently
 	requireCondition(
 		array,
 		Array.isArray,
@@ -27,24 +26,4 @@ export function chunk<T>(array: T[], size: number): T[][] {
 		result.push(array.slice(i * size, (i + 1) * size));
 	}
 	return result;
-}
-
-/**
- * Validates that a value satisfies a condition
- * @param value The value to check
- * @param condition The condition to satisfy
- * @param message The error message if the condition fails
- * @param name The name of the parameter (for error messages)
- * @throws {InvalidArgumentError} If the condition is not satisfied
- */
-function requireCondition<T>(
-	value: T,
-	condition: (value: T) => boolean,
-	message: string,
-	name?: string
-): T {
-	if (!condition(value)) {
-		throw new Error(message);
-	}
-	return value;
 }

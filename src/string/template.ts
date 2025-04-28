@@ -1,5 +1,5 @@
 // src/string/template.ts
-import { requireDefined } from '../errors';
+import { requireDefined, requireType, InvalidArgumentError } from '../errors';
 
 /**
  * Templates a string by replacing placeholders with values
@@ -29,14 +29,19 @@ export function template(
 	} = {}
 ): string {
 	// Validate inputs
-	requireDefined(template, 'template');
-	if (typeof template !== 'string') {
-		throw new Error(`Parameter 'template' must be of type string`);
-	}
-
+	requireType(template, 'string', 'template');
 	requireDefined(values, 'values');
-	if (typeof values !== 'object' || values === null) {
-		throw new Error(`Parameter 'values' must be an object`);
+
+	if (
+		values === null ||
+		typeof values !== 'object' ||
+		Array.isArray(values)
+	) {
+		throw new InvalidArgumentError(
+			`Parameter 'values' must be an object`,
+			'values',
+			values
+		);
 	}
 
 	const { missingValue = '', throwOnMissing = false } = options;
@@ -47,8 +52,10 @@ export function template(
 
 		if (value === undefined || value === null) {
 			if (throwOnMissing) {
-				throw new Error(
-					`Missing value for placeholder '{${trimmedKey}}'`
+				throw new InvalidArgumentError(
+					`Missing value for placeholder '{${trimmedKey}}'`,
+					trimmedKey,
+					value
 				);
 			}
 			return missingValue;

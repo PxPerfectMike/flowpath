@@ -1,5 +1,5 @@
 // src/string/truncate.ts
-import { requireDefined, requireRange } from '../errors';
+import { requireRange, requireType } from '../errors';
 
 /**
  * Truncates a string to a maximum length
@@ -18,18 +18,10 @@ export function truncate(
 	maxLength: number,
 	suffix = '...'
 ): string {
-	// Validate inputs
-	requireDefined(str, 'str');
-	if (typeof str !== 'string') {
-		throw new Error(`Parameter 'str' must be of type string`);
-	}
-
+	// Validate inputs consistently using the error utility functions
+	requireType(str, 'string', 'str');
 	requireRange(maxLength, 0, Number.POSITIVE_INFINITY, 'maxLength');
-
-	requireDefined(suffix, 'suffix');
-	if (typeof suffix !== 'string') {
-		throw new Error(`Parameter 'suffix' must be of type string`);
-	}
+	requireType(suffix, 'string', 'suffix');
 
 	if (str.length <= maxLength) {
 		return str;
